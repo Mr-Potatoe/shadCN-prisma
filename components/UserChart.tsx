@@ -3,6 +3,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
+
+type RechartData = {
+  name: string;
+  uv: number;
+  pv: number;
+};
+
 // Fetch users data
 const fetchUserData = async (page: number, limit: number) => {
   const res = await fetch(`/api/users?page=${page}&limit=${limit}`);
@@ -12,7 +19,7 @@ const fetchUserData = async (page: number, limit: number) => {
 
 const UsersChart = () => {
   const [page, setPage] = useState(1);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<RechartData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -24,14 +31,16 @@ const UsersChart = () => {
 
       try {
         const data = await fetchUserData(page, 10);
-        const formattedData = [
+        const formattedData: RechartData[] = [
           {
             name: `Page ${page}`,
-            users: data.users.length, // Set user count for current page
+            uv: data.users.length, // Assign user count to `uv`
+            pv: data.users.length, // Assign same or different metric to `pv`
           },
         ];
         setChartData(formattedData);
       } catch (error) {
+        console.error("Error haha", error);
         setHasError(true);
       } finally {
         setIsLoading(false);
