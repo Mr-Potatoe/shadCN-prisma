@@ -93,7 +93,6 @@ export default function NavBar() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex space-x-6">
           {navLinks}
-          <LogoutButton />
         </div>
 
         {/* Theme Toggle */}
