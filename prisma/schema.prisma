@@ -3,102 +3,203 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int              @id @default(autoincrement())
-  email     String           @unique
-  password  String
-  name      String?
-  role      Role             @default(STUDENT)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  answers   Answer[]
-  exams     ExamEnrollment[]
-  results   Result[]
-}
-
-model Exam {
-  id          Int              @id @default(autoincrement())
-  title       String
-  description String?
-  subject     String
-  duration    Int
-  startTime   DateTime
-  endTime     DateTime
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  enrollments ExamEnrollment[]
-  questions   Question[]
-  results     Result[]
-}
-
-model ExamEnrollment {
-  id        Int        @id @default(autoincrement())
-  userId    Int
-  examId    Int
-  status    ExamStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  exam      Exam       @relation(fields: [examId], references: [id])
-  user      User       @relation(fields: [userId], references: [id])
-
-  @@unique([userId, examId])
-}
-
-model Question {
-  id            Int          @id @default(autoincrement())
-  examId        Int
-  question      String
-  type          QuestionType @default(MCQ)
-  choices       String[]     @default([])
-  correctAnswer String?
-  createdAt     DateTime     @default(now())
-  answers       Answer[]
-  exam          Exam         @relation(fields: [examId], references: [id])
-}
-
-model Answer {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  questionId Int
-  answer     String
-  isCorrect  Boolean?
-  createdAt  DateTime @default(now())
-  question   Question @relation(fields: [questionId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
-}
-
-model Result {
-  id        Int          @id @default(autoincrement())
-  userId    Int
-  examId    Int
-  score     Float
-  status    ResultStatus @default(FAILED)
-  createdAt DateTime     @default(now())
-  exam      Exam         @relation(fields: [examId], references: [id])
-  user      User         @relation(fields: [userId], references: [id])
-}
-
-enum Role {
-  ADMIN
-  STUDENT
+enum Difficulty {
+  EASY
+  AVERAGE
+  HARD
 }
 
 enum QuestionType {
-  MCQ
-  ESSAY
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  FILL_BLANK
   TRUE_FALSE
+  MATCHING
+  ORDERING
+  NUMERICAL
 }
 
-enum ExamStatus {
-  PENDING
-  COMPLETED
-  CANCELLED
-}
-
-enum ResultStatus {
-  PASSED
+enum LoginStatus {
+  SUCCESS
   FAILED
+  BLOCKED
+}
+
+
+model Category {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  ExamSchedCategories ExamSchedCategory[]
+  ExamSessions       ExamSession[]
+  ProgramMappings    ProgramCategoryMapping[]
+  Results           Result[]
+  Statuses          Status[]
+  Questions Question[]  // <-- Add this relation
+}
+
+model Choice {
+  id            Int     @id @default(autoincrement())
+  questionId    Int
+  choice        String  @db.VarChar(50)
+  answer        String  @db.VarChar(50)
+  file          String? @db.Text
+  matchItem     String? @db.VarChar(255)
+  orderPosition Int?
+  tolerance     Decimal? @db.Decimal(10,2)
+
+  Question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Course {
+  id           Int    @id @default(autoincrement())
+  courseName   String @db.VarChar(255)
+  passingScore String @db.VarChar(10)
+}
+
+model ExamSchedule {
+  id          Int    @id @default(autoincrement())
+  description String @db.VarChar(100)
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  startTime   String @db.VarChar(15)
+  endTime     String @db.VarChar(15)
+
+  categories ExamSchedCategory[]
+}
+
+model ExamSchedCategory {
+  id          Int      @id @default(autoincrement())
+  scheduleId  Int
+  categoryId  Int
+  ExamSchedule ExamSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  Category     Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model ExamSession {
+  id                Int     @id @default(autoincrement())
+  categoryId        Int
+  studId            String  @db.VarChar(50)
+  startTime         DateTime
+  endTime           DateTime?
+  selectedAnswers   String? @db.Text
+  completed         Boolean @default(false)
+  selectedQuestions String? @db.Text
+
+  Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model LoginAttempt {
+  id         Int    @id @default(autoincrement())
+  userId     Int
+  macAddress String @db.VarChar(17)
+  loginTime  DateTime @default(now())
+  status     String @db.VarChar(20) // Store enum as string in MySQL
+  notes      String? @db.Text
+  ipAddress  String? @db.VarChar(45)
+}
+
+model ProgramCategoryMapping {
+  id         Int     @id @default(autoincrement())
+  programId  Int
+  categoryId Int
+  weight     Decimal @db.Decimal(5,2) @default(1.00)
+
+  Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Question {
+  id         Int    @id @default(autoincrement())
+  content    String @db.Text
+  file       String? @db.Text
+  categoryId Int
+  difficulty Difficulty @default(AVERAGE)
+  type       QuestionType @default(MULTIPLE_CHOICE)
+
+  Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  choices   Choice[]
+  Statuses Status[]
+}
+
+model Result {
+  id         Int     @id @default(autoincrement())
+  categoryId Int
+  studId     String  @db.VarChar(50)
+  score      Int
+  total      Int
+  percentage Decimal @db.Decimal(5,2) @default(0.00)
+  date       DateTime
+
+  Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model SMS {
+  id        Int     @id @default(autoincrement())
+  mobileNo  String  @db.VarChar(45)
+  message   String  @db.VarChar(255)
+  studentId String? @db.VarChar(50)
+  senderId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Status {
+  id         Int     @id @default(autoincrement())
+  studId     String  @db.VarChar(50)
+  questionId Int
+  categoryId Int
+  choiceId   String  @db.VarChar(255) @default("0")
+  hasQuiz    Boolean
+  isCorrect  Boolean @default(false)
+
+  Category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  Question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Student {
+  id         Int     @id @default(autoincrement())
+  studId     String  @db.VarChar(50) @unique
+  lrn        String  @db.VarChar(12) @unique
+  fname      String  @db.VarChar(100)
+  lname      String  @db.VarChar(100)
+  gender     String  @db.VarChar(10)
+  mobileNo   String  @db.VarChar(45)
+  email      String  @db.VarChar(45) @unique
+  address    String? @db.VarChar(45)
+  birthDate  DateTime?
+  graduated  DateTime?
+  lastSchool String? @db.VarChar(100)
+  prefCourse Int?
+  userId     Int
+
+  devices StudentDevice[]
+}
+
+model StudentDevice {
+  id               Int     @id @default(autoincrement())
+  studId           String  @db.VarChar(50)
+  macAddress       String  @db.VarChar(17)
+  ipAddress        String  @db.VarChar(45)
+  firstUsed        DateTime @default(now())
+  lastUsed         DateTime @updatedAt
+  nextDeviceChange DateTime?
+  deviceChanges    Int     @default(0)
+  isActive         Boolean @default(true)
+
+  Student Student @relation(fields: [studId], references: [studId], onDelete: Cascade)
+}
+
+model UserData {
+  id          Int    @id @default(autoincrement())
+  username    String @db.VarChar(100) @unique
+  password    String @db.VarChar(100)
+  strPassword String @db.VarChar(100) // Store encrypted version
+  fname       String @db.VarChar(100)
+  lname       String @db.VarChar(100)
+  email       String @db.VarChar(45) @unique
+  mobileNo    String @db.VarChar(45)
+  level       String @db.VarChar(100)
 }

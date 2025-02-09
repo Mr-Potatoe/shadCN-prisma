@@ -14,27 +14,57 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 
+const navItems = {
+  ADMIN: [
+    { href: "/admin/dashboard", label: "Dashboard" },
+    { href: "/admin/users", label: "Manage Users" },
+    { href: "/admin/reports", label: "Reports" },
+  ],
+  STUDENT: [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/courses", label: "Courses" },
+    { href: "/profile", label: "Profile" },
+  ],
+};
 export default function NavBar() {
   const { setTheme } = useTheme();
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<"ADMIN" | "STUDENT" | null>(null);
 
-  // Fetch role from localStorage and update when it changes
   useEffect(() => {
-    const storedRole = localStorage.getItem("role");
+    const storedRole = localStorage.getItem("role") as "ADMIN" | "STUDENT" | null;
     setRole(storedRole);
 
     const handleStorageChange = () => {
-      setRole(localStorage.getItem("role"));
+      setRole(localStorage.getItem("role") as "ADMIN" | "STUDENT" | null);
     };
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  const renderNavItems = (isMobile = false) => {
+    if (!role || !navItems[role]) return null;
+
+    return (
+      <>
+        {navItems[role].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`text-gray-900 dark:text-white hover:text-blue-500 ${
+              isMobile ? "" : "hidden md:inline-block"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+        <LogoutButton />
+      </>
+    );
+  };
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-md px-4 py-3">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Mobile Menu */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden">
@@ -46,72 +76,19 @@ export default function NavBar() {
               MyApp
             </Link>
             <div className="mt-6 flex flex-col space-y-4">
-              {role === "ADMIN" ? (
-                <>
-                  <Link href="/admin/dashboard" className="text-gray-900 dark:text-white hover:text-blue-500">
-                    Dashboard
-                  </Link>
-                  <Link href="/admin/users" className="text-gray-900 dark:text-white hover:text-blue-500">
-                    Manage Users
-                  </Link>
-                  <Link href="/admin/reports" className="text-gray-900 dark:text-white hover:text-blue-500">
-                    Reports
-                  </Link>
-                  <LogoutButton />
-                </>
-              ) : role === "STUDENT" ? (
-                <>
-                  <Link href="/dashboard" className="text-gray-900 dark:text-white hover:text-blue-500">
-                    Dashboard
-                  </Link>
-                  <Link href="/courses" className="text-gray-900 dark:text-white hover:text-blue-500">
-                    Courses
-                  </Link>
-                  <Link href="/profile" className="text-gray-900 dark:text-white hover:text-blue-500">
-                    Profile
-                  </Link>
-                  <LogoutButton />
-                </>
-              ) : null}
+              {renderNavItems(true)}
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* Logo (Visible on all screen sizes) */}
         <Link href="/" className="text-2xl font-semibold text-gray-900 dark:text-white hidden md:block">
           MyApp
         </Link>
 
-        {/* Desktop Navigation */}
-        {role === "ADMIN" ? (
-          <div className="hidden md:flex space-x-6">
-            <Link href="/admin/dashboard" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Dashboard
-            </Link>
-            <Link href="/admin/users" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Manage Users
-            </Link>
-            <Link href="/admin/reports" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Reports
-            </Link>
-            <LogoutButton />
-          </div>
-        ) : role === "STUDENT" ? (
-          <div className="hidden md:flex space-x-6">
-            <Link href="/dashboard" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Dashboard
-            </Link>
-            <Link href="/courses" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Courses
-            </Link>
-            <Link href="/profile" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Profile
-            </Link>
-            <LogoutButton />
-          </div>
-        ) : null}
+        <div className="hidden md:flex space-x-6">
+          {renderNavItems()}
+        </div>
 
-        {/* Theme Toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="relative">
@@ -130,3 +107,4 @@ export default function NavBar() {
     </nav>
   );
 }
+
