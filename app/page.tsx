@@ -36,9 +36,10 @@ export default function Home() {
   const [showPassword, setShowPassword] = useState(false);
 
   const [loginData, setLoginData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
+  
 
   const [loading, setLoading] = useState(false);
 
@@ -194,12 +195,10 @@ export default function Home() {
                       Email Address
                     </label>
                     <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="you@example.com"
+                      name="username"
+                      placeholder="Enter username"
                       required
-                      value={loginData.email}
+                      value={loginData.username}
                       onChange={handleChange}
                     />
                   </div>
