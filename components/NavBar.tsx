@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -10,35 +10,73 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 
 export default function NavBar() {
   const { setTheme } = useTheme();
+  const [role, setRole] = useState<string | null>(null);
+
+  // Fetch role from localStorage properly
+  useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    setRole(storedRole);
+
+    const handleStorageChange = () => {
+      setRole(localStorage.getItem("role")); // Update when role changes
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Update role instantly on login/logout
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRole(localStorage.getItem("role"));
+    }, 500); // Check every 500ms (fixes sync issues)
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-md px-4 py-3">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          {/* Logo Section */}
-          <Link href="/" className="text-2xl font-semibold text-gray-900 dark:text-white">
-            MyApp
-          </Link>
+        {/* Logo */}
+        <Link href="/" className="text-2xl font-semibold text-gray-900 dark:text-white">
+          MyApp
+        </Link>
 
-          {/* Navigation Links */}
+        {/* Conditional Navigation */}
+        {role === "ADMIN" ? (
           <div className="hidden md:flex space-x-6">
-            <Link href="/" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Home
+            <Link href="/admin/dashboard" className="text-gray-900 dark:text-white hover:text-blue-500">
+              Dashboard
             </Link>
-            <Link href="/users" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Users
+            <Link href="/admin/users" className="text-gray-900 dark:text-white hover:text-blue-500">
+              Manage Users
             </Link>
-            <Link href="/contact" className="text-gray-900 dark:text-white hover:text-blue-500">
-              Contact
+            <Link href="/admin/reports" className="text-gray-900 dark:text-white hover:text-blue-500">
+              Reports
             </Link>
+            <LogoutButton />
           </div>
-        </div>
+        ) : role === "STUDENT" ? (
+          <div className="hidden md:flex space-x-6">
+            <Link href="/dashboard" className="text-gray-900 dark:text-white hover:text-blue-500">
+              Dashboard
+            </Link>
+            <Link href="/courses" className="text-gray-900 dark:text-white hover:text-blue-500">
+              Courses
+            </Link>
+            <Link href="/profile" className="text-gray-900 dark:text-white hover:text-blue-500">
+              Profile
+            </Link>
+            <LogoutButton />
+          </div>
+        ) : null}
 
-        {/* Theme Toggle Dropdown */}
+        {/* Theme Toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="relative">
@@ -48,15 +86,9 @@ export default function NavBar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setTheme("light")}>
-              Light
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("dark")}>
-              Dark
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("system")}>
-              System
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
