@@ -64,7 +64,7 @@ export default function NavBar() {
   }, [role]);
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-md px-4 py-3">
+    <nav className="sticky top-0 bg-white dark:bg-gray-900 shadow-md px-4 py-3">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         
         {/* Mobile Navigation */}
