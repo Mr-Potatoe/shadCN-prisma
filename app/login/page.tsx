@@ -7,16 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
+// Define API response type
+interface LoginResponse {
+  token: string;
+  role: "ADMIN" | "STUDENT";
+  error?: string;
+}
+
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      return setError("Both fields are required.");
+      setError("Both fields are required.");
+      return;
     }
 
     setError("");
@@ -29,7 +37,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data: LoginResponse = await res.json();
 
       if (!res.ok) {
         throw new Error(data.error || "Invalid credentials");
@@ -41,8 +49,12 @@ export default function LoginPage() {
       setTimeout(() => {
         router.push(data.role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
       }, 300);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
