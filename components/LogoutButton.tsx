@@ -14,7 +14,7 @@ export default function LogoutButton() {
     localStorage.removeItem("role");
 
     setOpen(false);
-    router.push("/login"); // Redirect to login page
+    router.push("/"); // Redirect to login page
   };
 
   return (
